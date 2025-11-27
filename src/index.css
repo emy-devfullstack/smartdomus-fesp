@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 220 18% 12%;
+    --foreground: 210 20% 92%;
+
+    --card: 220 16% 15%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 220 16% 15%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 195 100% 50%;
+    --primary-foreground: 220 18% 10%;
+
+    --secondary: 220 14% 20%;
+    --secondary-foreground: 210 20% 92%;
+
+    --muted: 220 14% 20%;
+    --muted-foreground: 210 12% 65%;
+
+    --accent: 195 100% 50%;
+    --accent-foreground: 220 18% 10%;
+
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 25%;
+    --input: 220 20% 25%;
+    --ring: 195 100% 50%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens for home automation - tech black theme */
+    --device-active: 195 100% 50%;
+    --device-inactive: 220 14% 30%;
+    --device-bg: 220 18% 18%;
+    --device-bg-hover: 220 18% 22%;
+    --glow: 195 100% 50%;
+  }
+
+  .dark {
+    --background: 220 20% 8%;
+    --foreground: 210 20% 95%;
+
+    --card: 220 18% 12%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 220 18% 12%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 195 100% 55%;
+    --primary-foreground: 220 20% 8%;
+
+    --secondary: 220 16% 16%;
+    --secondary-foreground: 210 20% 95%;
+
+    --muted: 220 16% 16%;
+    --muted-foreground: 210 12% 70%;
+
+    --accent: 195 100% 55%;
+    --accent-foreground: 220 20% 8%;
+
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 22% 20%;
+    --input: 220 22% 20%;
+    --ring: 195 100% 55%;
+
+    /* Custom tokens for home automation - dark mode tech */
+    --device-active: 195 100% 55%;
+    --device-inactive: 220 16% 25%;
+    --device-bg: 220 20% 14%;
+    --device-bg-hover: 220 20% 18%;
+    --glow: 195 100% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

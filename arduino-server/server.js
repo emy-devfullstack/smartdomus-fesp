@@ -12,7 +12,7 @@ const io = new Server(server, {
 
 // -------- SERIAL ARDUINO --------
 const port = new SerialPort({
-  path: "COM3",    // ALTERAR AQUI para sua porta (COM3, /dev/ttyUSB0, etc)
+  path: "COM9",    // ALTERAR AQUI para sua porta (COM3, /dev/ttyUSB0, etc)
   baudRate: 9600,
 });
 

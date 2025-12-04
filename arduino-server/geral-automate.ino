@@ -1,191 +1,127 @@
 #include <Servo.h>
 
 // ----------------------------------------
-// 1. PINOS DO SISTEMA VARAL/CLIMA
+// 1. PINOS E CONSTANTES DO SISTEMA VARAL/CLIMA
 // ----------------------------------------
-const int pinoSensorAgua = A0;
-const int pinoServo = 10;
-const int pinoLED_Clima = 13;
-const int pinoSensorTemperatura = A1;
+const int pinoSensorAgua = A0; 
+const int pinoServo = 10; 
+const int pinoLED_Clima = 13; 
+const int pinoSensorTemperatura = A1; 
 
 Servo meuServo;
 bool varalEstaRecolhido = true;
-
-// ---------- NOVAS POSIÇÕES EM MICROSEGUNDOS ----------
-// Servo 270° (usar writeMicroseconds para ultrapassar 180°)
-const int SERVO_POS_RECOLHE = 2600;   // ~220°
-const int SERVO_POS_ESTENDE = 2400;   // ~180°
-const int TEMPO_GIRO = 2500;
-
-// Sensor de umidade
-const int LIMITE_AGUA = 250;
+// NOVO LIMITE DE CALIBRAÇÃO (valor > 110 = MOLHADO)
+const int LIMITE_AGUA = 110; 
+// ÂNGULOS AJUSTADOS (180 é recolhido, 0 é exposto)
+const int VARAL_RECOLHIDO_ANGULO = 180;
+const int VARAL_EXPOSTO_ANGULO = 0;   
+const long TEMPO_GIRO_COMPLETO_MS = 3000;
 unsigned long ultimoCheckUmidade = 0;
 const long INTERVALO_CHECK_UMIDADE_MS = 500;
 
-// ----------------------------------------
-// 2. ILUMINAÇÃO COM PIR
-// ----------------------------------------
-const int pinoPIR = 2;
-const int ledDistancia1 = 6;
-const int ledDistancia2 = 8;
-const int ledDistancia3 = 7;
 
-bool estadoLuzesAcesas = false;
-bool modoManualLuzes = false; // Controle manual via app
+// ----------------------------------------
+// 2. PINOS E CONSTANTES DO SISTEMA ILUMINAÇÃO POR PRESENÇA (PIR)
+// ----------------------------------------
+const int pinoPIR = 2; // Pino do sensor de presença 
+const int ledDistancia1 = 6;
+const int ledDistancia2 = 8; 
+const int ledDistancia3 = 7; 
+
+bool estadoLuzesAcesas = false; 
 const long TEMPO_LUZ_ACESO_MS = 5000;
 unsigned long ultimoMovimentoDetectado = 0;
 
-// -------------------------------------------------------
-// FUNÇÃO ILUMINAÇÃO POR PRESENÇA
-// -------------------------------------------------------
+// --------------------------------------------------------------------------------
+
+// FUNÇÃO PARA O SISTEMA DE ILUMINAÇÃO POR PRESENÇA (PIR)
 void controlarPresenca() {
-  // Se estiver em modo manual, não controlar por presença
-  if (modoManualLuzes) return;
+  int leituraPIR = digitalRead(pinoPIR); 
 
-  int leituraPIR = digitalRead(pinoPIR);
-
-  if (leituraPIR == HIGH) {
+  if (leituraPIR == HIGH) { 
     ultimoMovimentoDetectado = millis();
-
+    
     if (!estadoLuzesAcesas) {
-      digitalWrite(ledDistancia1, HIGH);
+      digitalWrite(ledDistancia1, HIGH); 
       digitalWrite(ledDistancia2, HIGH);
       digitalWrite(ledDistancia3, HIGH);
       Serial.println("Movimento detectado. Luzes LIGADAS.");
       estadoLuzesAcesas = true;
     }
-  }
-
-  if (estadoLuzesAcesas && (millis() - ultimoMovimentoDetectado >= TEMPO_LUZ_ACESO_MS)) {
-    digitalWrite(ledDistancia1, LOW);
-    digitalWrite(ledDistancia2, LOW);
-    digitalWrite(ledDistancia3, LOW);
-    Serial.println("Sem movimento. Luzes DESLIGADAS.");
-    estadoLuzesAcesas = false;
-  }
-}
-
-// -------------------------------------------------------
-// FUNÇÕES DO VARAL (NOVAS) COM GIRO 220° ↔ 180°
-// -------------------------------------------------------
-void estenderVaral() {
-  Serial.println("➡ Estendendo varal (girando anti-horário 220° → 180°)");
-
-  meuServo.attach(pinoServo);
-  meuServo.writeMicroseconds(SERVO_POS_ESTENDE);
-  delay(TEMPO_GIRO);
-  meuServo.detach();
-
-  digitalWrite(pinoLED_Clima, HIGH);
-  varalEstaRecolhido = false;
-}
-
-void recolherVaral() {
-  Serial.println("⬅ Recolhendo varal (girando horário 180° → 220°)");
-
-  meuServo.attach(pinoServo);
-  meuServo.writeMicroseconds(SERVO_POS_RECOLHE);
-  delay(TEMPO_GIRO);
-  meuServo.detach();
-
-  digitalWrite(pinoLED_Clima, LOW);
-  varalEstaRecolhido = true;
-}
-
-// -------------------------------------------------------
-// PROCESSAR COMANDOS SERIAIS
-// -------------------------------------------------------
-void processarComando(String comando) {
-  comando.trim();
-  
-  if (comando == "ESTENDER") {
-    estenderVaral();
   } 
-  else if (comando == "RECOLHER") {
-    recolherVaral();
-  }
-  else if (comando == "LED1:ON") {
-    digitalWrite(ledDistancia1, HIGH);
-    modoManualLuzes = true;
-    Serial.println("LED1 LIGADO (manual)");
-  }
-  else if (comando == "LED1:OFF") {
-    digitalWrite(ledDistancia1, LOW);
-    Serial.println("LED1 DESLIGADO");
-  }
-  else if (comando == "LED2:ON") {
-    digitalWrite(ledDistancia2, HIGH);
-    modoManualLuzes = true;
-    Serial.println("LED2 LIGADO (manual)");
-  }
-  else if (comando == "LED2:OFF") {
+  
+  // Lógica de Desligamento: Temporização Não-Bloqueante
+  if (estadoLuzesAcesas && (millis() - ultimoMovimentoDetectado >= TEMPO_LUZ_ACESO_MS)) {
+    digitalWrite(ledDistancia1, LOW); 
     digitalWrite(ledDistancia2, LOW);
-    Serial.println("LED2 DESLIGADO");
-  }
-  else if (comando == "LED3:ON") {
-    digitalWrite(ledDistancia3, HIGH);
-    modoManualLuzes = true;
-    Serial.println("LED3 LIGADO (manual)");
-  }
-  else if (comando == "LED3:OFF") {
     digitalWrite(ledDistancia3, LOW);
-    Serial.println("LED3 DESLIGADO");
-  }
-  else if (comando == "AUTO") {
-    modoManualLuzes = false;
-    Serial.println("Modo automático ativado");
+    Serial.println("Tempo esgotado. Sem movimento. Luzes Desligadas.");
+    estadoLuzesAcesas = false; 
   }
 }
 
-// -------------------------------------------------------
-// SETUP
-// -------------------------------------------------------
+// --------------------------------------------------------------------------------
+
 void setup() {
+  // CONFIGURAÇÃO DO SISTEMA VARAL/CLIMA
   pinMode(pinoLED_Clima, OUTPUT);
-
   meuServo.attach(pinoServo);
-  meuServo.writeMicroseconds(SERVO_POS_RECOLHE);
-  delay(500);
-  meuServo.detach();
+  // Inicia na posição RECOLHIDA (180°)
+  meuServo.write(VARAL_RECOLHIDO_ANGULO); 
+  delay(100);
+  meuServo.detach(); // Libera o recurso Timer/PWM
 
+  // CONFIGURAÇÃO DO SISTEMA DE ILUMINAÇÃO POR PRESENÇA (PIR)
   pinMode(ledDistancia1, OUTPUT);
   pinMode(ledDistancia2, OUTPUT);
   pinMode(ledDistancia3, OUTPUT);
-  pinMode(pinoPIR, INPUT);
-
+  pinMode(pinoPIR, INPUT); 
+  
   Serial.begin(9600);
-  Serial.println(">>> Sistema SmartDomus Iniciado <<<");
+  Serial.println(">>> Automação Residencial Integrada (Varal e Iluminação PIR) <<<");
 }
 
-// -------------------------------------------------------
-// LOOP PRINCIPAL
-// -------------------------------------------------------
+// --------------------------------------------------------------------------------
+
 void loop() {
   
-  // ---------- Ler comandos seriais ----------
-  if (Serial.available() > 0) {
-    String comando = Serial.readStringUntil('\n');
-    processarComando(comando);
-  }
-
-  // ---------- Monitoramento do sensor de umidade ----------
+  // 1. EXECUTA O SISTEMA VARAL/CLIMA (Lógica de Umidade) - Executado a cada 500ms
   if (millis() - ultimoCheckUmidade >= INTERVALO_CHECK_UMIDADE_MS) {
-    ultimoCheckUmidade = millis();
+    ultimoCheckUmidade = millis(); 
+    
     int valorUmidade = analogRead(pinoSensorAgua);
-
-    Serial.print("Umidade: ");
+    Serial.print("Umidade (Digital): ");
     Serial.println(valorUmidade);
-
+    
+    // CONDIÇÃO 1: DETECTOU MOLHADO (valor > 110) -> DEVE RECOLHER (180°)
     if (valorUmidade > LIMITE_AGUA && !varalEstaRecolhido) {
-      recolherVaral();
-    }
+      Serial.println("Chuva detectada. Recolhendo Varal.");
+
+      meuServo.attach(pinoServo); 
+      meuServo.write(VARAL_RECOLHIDO_ANGULO); 
+      delay(TEMPO_GIRO_COMPLETO_MS); // Bloqueio necessário (3s) 
+      meuServo.detach(); 
+
+      digitalWrite(pinoLED_Clima, LOW); 
+      varalEstaRecolhido = true; 
+    } 
+    
+    // CONDIÇÃO 2: DETECTOU SECO (valor <= 110) -> DEVE EXPOR (0°)
     else if (valorUmidade <= LIMITE_AGUA && varalEstaRecolhido) {
-      estenderVaral();
+      Serial.println("Tempo seco. Expondo Varal.");
+
+      meuServo.attach(pinoServo); 
+      meuServo.write(VARAL_EXPOSTO_ANGULO); 
+      delay(TEMPO_GIRO_COMPLETO_MS); // Bloqueio necessário (3s) 
+      meuServo.detach(); 
+
+      digitalWrite(pinoLED_Clima, HIGH); 
+      varalEstaRecolhido = false; 
     }
-  }
+  } 
 
-  // ---------- Sistema de iluminação ----------
+  // 2. EXECUTA O SISTEMA DE ILUMINAÇÃO POR PRESENÇA (PIR) - Executado a cada micro-loop
   controlarPresenca();
-
-  delay(10);
+  
+  delay(10); // Pequeno delay de estabilidade
 }
